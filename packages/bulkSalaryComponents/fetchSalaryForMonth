@@ -1,0 +1,49 @@
+const pgp = require("pg-promise")();
+const salary = require("../../lib/repository/userSalaryComponents");
+const validateToken = require("../../lib/utils/validateToken");
+
+exports.main = async (event, context) => {
+  const { headers, payload } = event;
+
+  //validate the token received
+  try {
+    const { tokenDetails } = validateToken.validateAuthToken(
+      headers.Authorization
+    );
+  } catch (err) {
+    console.log("ERROR: " + err);
+    return (res = {
+      statusCode: 403,
+      body: {
+        error: true,
+        message: "Invalid Authorization Token",
+      },
+    });
+  }
+
+  //to fetch the salaries of all employees for a Month
+  try {
+    const month = payload.month;
+    const year = payload.year;
+
+    const salarybulk = await salary.getSalaryComponentsforMonth(month, year);
+    console.log('MESSAGE: DATA FETCH SUCCESS');
+    pgp.end();
+
+    return (res = {
+      salarydata: salarybulk,
+      body: {
+        error: false,
+        message: "Salary details for the month has been fetched successfully",
+      },
+    });
+  } catch (err) {
+    console.log("error");
+    return (res = {
+      body: {
+        error: true,
+        message: "Error in fetching data !!",
+      },
+    });
+  }
+};
